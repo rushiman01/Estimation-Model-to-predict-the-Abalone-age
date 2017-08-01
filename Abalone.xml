@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><process version="7.5.003">
+  <context>
+    <input/>
+    <output/>
+    <macros/>
+  </context>
+  <operator activated="true" class="process" compatibility="7.5.003" expanded="true" name="Process">
+    <process expanded="true">
+      <operator activated="true" class="retrieve" compatibility="7.5.003" expanded="true" height="68" name="Retrieve Abalone_020817v1" width="90" x="45" y="34">
+        <parameter key="repository_entry" value="../data/Abalone"/>
+      </operator>
+      <operator activated="true" class="filter_examples" compatibility="7.5.003" expanded="true" height="103" name="Filter Examples" width="90" x="179" y="34">
+        <list key="filters_list">
+          <parameter key="filters_entry_key" value="Class.gt.3"/>
+          <parameter key="filters_entry_key" value="Class.lt.29"/>
+        </list>
+      </operator>
+      <operator activated="true" class="generate_attributes" compatibility="7.5.003" expanded="true" height="82" name="Generate Attributes" width="90" x="313" y="34">
+        <list key="function_descriptions">
+          <parameter key="F1" value="(Schucked_Weight+Viscera_Weight)/Whole_Weight"/>
+          <parameter key="f2" value="Diameter/(Length*Height)"/>
+          <parameter key="F3" value="(Shell_Weight/Whole_Weight)"/>
+          <parameter key="F4" value="(Shell_Weight/Whole_Weight)*(Schucked_Weight/Viscera_Weight)"/>
+        </list>
+      </operator>
+      <operator activated="true" class="numerical_to_polynominal" compatibility="7.5.003" expanded="true" height="82" name="Numerical to Polynominal" width="90" x="447" y="34"/>
+      <operator activated="true" class="set_role" compatibility="7.5.003" expanded="true" height="82" name="Set Role (2)" width="90" x="581" y="34">
+        <parameter key="attribute_name" value="Class"/>
+        <parameter key="target_role" value="label"/>
+        <list key="set_additional_roles"/>
+      </operator>
+      <operator activated="true" class="optimize_parameters_grid" compatibility="7.5.003" expanded="true" height="166" name="Optimize Parameters (Grid)" width="90" x="246" y="238">
+        <list key="parameters">
+          <parameter key="k-NN.k" value="[1.0;100.0;10;linear]"/>
+          <parameter key="k-NN.measure_types" value="MixedMeasures,NominalMeasures,NumericalMeasures,BregmanDivergences"/>
+          <parameter key="k-NN.kernel_type" value="dot,radial,polynomial,sigmoid,anova,epanechnikov,gausian_combination,multiquadric"/>
+        </list>
+        <parameter key="error_handling" value="ignore error"/>
+        <process expanded="true">
+          <operator activated="true" class="concurrency:cross_validation" compatibility="7.5.003" expanded="true" height="145" name="Cross Validation" width="90" x="246" y="34">
+            <parameter key="sampling_type" value="stratified sampling"/>
+            <parameter key="use_local_random_seed" value="true"/>
+            <process expanded="true">
+              <operator activated="true" class="k_nn" compatibility="7.5.003" expanded="true" height="82" name="k-NN" width="90" x="112" y="85">
+                <parameter key="k" value="100"/>
+                <parameter key="weighted_vote" value="true"/>
+                <parameter key="measure_types" value="NominalMeasures"/>
+                <parameter key="kernel_type" value="dot"/>
+              </operator>
+              <connect from_port="training set" to_op="k-NN" to_port="training set"/>
+              <connect from_op="k-NN" from_port="model" to_port="model"/>
+              <portSpacing port="source_training set" spacing="0"/>
+              <portSpacing port="sink_model" spacing="0"/>
+              <portSpacing port="sink_through 1" spacing="0"/>
+            </process>
+            <process expanded="true">
+              <operator activated="true" class="apply_model" compatibility="7.5.003" expanded="true" height="82" name="Apply Model" width="90" x="45" y="34">
+                <list key="application_parameters"/>
+              </operator>
+              <operator activated="true" class="performance_classification" compatibility="7.5.003" expanded="true" height="82" name="Performance" width="90" x="179" y="34">
+                <parameter key="main_criterion" value="classification_error"/>
+                <parameter key="classification_error" value="true"/>
+                <list key="class_weights"/>
+              </operator>
+              <operator activated="true" class="log" compatibility="7.5.003" expanded="true" height="82" name="Log" width="90" x="45" y="289">
+                <parameter key="filename" value="C:\Users\prade\OneDrive\SWEN Spring 2017\SDE_Prof_Drake\RapidminerProcess\Abalone_log.log"/>
+                <list key="log">
+                  <parameter key="f1" value="operator.Performance.parameter.classification_error"/>
+                  <parameter key="f2" value="operator.Performance.parameter.soft_margin_loss"/>
+                  <parameter key="f3" value="operator.Performance.value.classification_error"/>
+                </list>
+              </operator>
+              <connect from_port="model" to_op="Apply Model" to_port="model"/>
+              <connect from_port="test set" to_op="Apply Model" to_port="unlabelled data"/>
+              <connect from_op="Apply Model" from_port="labelled data" to_op="Performance" to_port="labelled data"/>
+              <connect from_op="Performance" from_port="performance" to_op="Log" to_port="through 1"/>
+              <connect from_op="Log" from_port="through 1" to_port="performance 1"/>
+              <portSpacing port="source_model" spacing="0"/>
+              <portSpacing port="source_test set" spacing="0"/>
+              <portSpacing port="source_through 1" spacing="0"/>
+              <portSpacing port="sink_test set results" spacing="0"/>
+              <portSpacing port="sink_performance 1" spacing="0"/>
+              <portSpacing port="sink_performance 2" spacing="0"/>
+            </process>
+          </operator>
+          <connect from_port="input 1" to_op="Cross Validation" to_port="example set"/>
+          <connect from_op="Cross Validation" from_port="model" to_port="result 2"/>
+          <connect from_op="Cross Validation" from_port="example set" to_port="result 1"/>
+          <connect from_op="Cross Validation" from_port="test result set" to_port="result 3"/>
+          <connect from_op="Cross Validation" from_port="performance 1" to_port="performance"/>
+          <portSpacing port="source_input 1" spacing="0"/>
+          <portSpacing port="source_input 2" spacing="0"/>
+          <portSpacing port="sink_performance" spacing="0"/>
+          <portSpacing port="sink_result 1" spacing="0"/>
+          <portSpacing port="sink_result 2" spacing="0"/>
+          <portSpacing port="sink_result 3" spacing="0"/>
+          <portSpacing port="sink_result 4" spacing="0"/>
+        </process>
+      </operator>
+      <connect from_op="Retrieve Abalone_020817v1" from_port="output" to_op="Filter Examples" to_port="example set input"/>
+      <connect from_op="Filter Examples" from_port="example set output" to_op="Generate Attributes" to_port="example set input"/>
+      <connect from_op="Generate Attributes" from_port="example set output" to_op="Numerical to Polynominal" to_port="example set input"/>
+      <connect from_op="Numerical to Polynominal" from_port="example set output" to_op="Set Role (2)" to_port="example set input"/>
+      <connect from_op="Set Role (2)" from_port="example set output" to_op="Optimize Parameters (Grid)" to_port="input 1"/>
+      <connect from_op="Optimize Parameters (Grid)" from_port="performance" to_port="result 1"/>
+      <connect from_op="Optimize Parameters (Grid)" from_port="parameter" to_port="result 2"/>
+      <connect from_op="Optimize Parameters (Grid)" from_port="result 1" to_port="result 3"/>
+      <connect from_op="Optimize Parameters (Grid)" from_port="result 2" to_port="result 4"/>
+      <portSpacing port="source_input 1" spacing="0"/>
+      <portSpacing port="sink_result 1" spacing="0"/>
+      <portSpacing port="sink_result 2" spacing="0"/>
+      <portSpacing port="sink_result 3" spacing="0"/>
+      <portSpacing port="sink_result 4" spacing="0"/>
+      <portSpacing port="sink_result 5" spacing="0"/>
+    </process>
+  </operator>
+</process>
